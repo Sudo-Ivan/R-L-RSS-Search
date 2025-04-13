@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit & Lemmy Search</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="/icons/logo.png" type="image/png">
+    <meta name="theme-color" content="#333">
+    <style>
+        #theme-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--tab-bg);
+            color: var(--text-color);
+            border-radius: 5px;
+            z-index: 1000;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle">Toggle Theme</button>
+
+    <h1>Search Reddit & Lemmy via RSS</h1>
+
+    <div class="tabs">
+        <button class="tab-button active" data-service="reddit">Reddit</button>
+        <button class="tab-button" data-service="lemmy">Lemmy</button>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="query" placeholder="Search query...">
+        <input type="text" id="subreddit" placeholder="Subreddit (optional)">
+        <button id="search-button">Search</button>
+    </div>
+
+    <div class="results-controls">
+        <input type="text" id="keyword-filter" placeholder="Filter results by keyword...">
+        <div class="export-buttons">
+            <span>Export visible results:</span>
+            <button id="export-json">JSON</button>
+            <button id="export-csv">CSV</button>
+            <button id="export-txt">TXT</button>
+        </div>
+    </div>
+
+    <div id="results">
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                themeMeta.setAttribute('content', getComputedStyle(body).getPropertyValue('--bg-color-dark').trim());
+                themeToggle.textContent = 'Light Mode';
+            } else {
+                body.classList.remove('dark-mode');
+                themeMeta.setAttribute('content', getComputedStyle(body).getPropertyValue('--bg-color-light').trim());
+                themeToggle.textContent = 'Dark Mode';
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        let currentTheme = 'light';
+        if (savedTheme) {
+            currentTheme = savedTheme;
+        } else if (prefersDark) {
+            currentTheme = 'dark';
+        }
+
+        applyTheme(currentTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (!localStorage.getItem('theme')) {
+                const newTheme = event.matches ? 'dark' : 'light';
+                applyTheme(newTheme);
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
